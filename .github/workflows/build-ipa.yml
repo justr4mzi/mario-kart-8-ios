@@ -1,0 +1,238 @@
+# Build Mush8.ipa on a GitHub macOS runner (for AltStore / SideStore)
+#
+# Required secrets (Settings > Secrets and variables > Actions):
+#   KEYS_URL      direct download link to prod.keys
+#   BASE_URL      direct download link to the base game .nsp
+#   UPDATE_URL    direct download link to the 4.0.1 update .nsp
+#   IPA_PASSWORD  password used to encrypt the IPA (the repo is public, so the artifact is encrypted)
+#
+# Launch: Actions tab > "Build Mush8 IPA" > Run workflow
+
+name: Build Mush8 IPA
+
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: "macOS runner label"
+        default: "macos-26"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ${{ inputs.runner || 'macos-26' }}
+    timeout-minutes: 360
+    env:
+      TOOLCHAIN: 1.98.1
+
+    steps:
+      - name: Check secrets
+        env:
+          KEYS_URL: ${{ secrets.KEYS_URL }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          UPDATE_URL: ${{ secrets.UPDATE_URL }}
+          GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
+          IPA_PASSWORD: ${{ secrets.IPA_PASSWORD }}
+        run: |
+          missing=0
+          for v in KEYS_URL BASE_URL UPDATE_URL IPA_PASSWORD; do
+            if [ -z "${!v}" ]; then echo "::error::Secret $v is missing"; missing=1; fi
+          done
+          exit $missing
+
+      - name: Use the newest Xcode (highest iOS SDK)
+        run: |
+          X="$(for x in /Applications/Xcode*.app; do echo "$(DEVELOPER_DIR=$x/Contents/Developer xcrun -sdk iphoneos --show-sdk-version 2>/dev/null) $x"; done | sort -V | tail -1 | cut -d' ' -f2-)"
+          echo "selecting $X"
+          sudo xcode-select -s "$X/Contents/Developer"
+          xcodebuild -version
+          xcrun -sdk iphoneos --show-sdk-version
+
+      - name: Check machine (arm64, Xcode, Metal, disk)
+        run: |
+          uname -m
+          [ "$(uname -m)" = arm64 ] || { echo "::error::Not an Apple Silicon runner"; exit 1; }
+          xcodebuild -version
+          cat > "$RUNNER_TEMP/metal.swift" <<'EOF'
+          import Metal
+          if let d = MTLCreateSystemDefaultDevice() { print("Metal OK: \(d.name)") }
+          else { print("No Metal device"); exit(1) }
+          EOF
+          swift "$RUNNER_TEMP/metal.swift" || { echo "::error::No Metal device on this runner, shaders cannot be precompiled"; exit 1; }
+          df -h /
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf ~/Library/Android ~/.dotnet /usr/local/share/dotnet ~/.ghcup || true
+          xcrun simctl delete all || true
+          df -h /
+
+      - uses: actions/checkout@v4
+
+      - name: Install Rust toolchain and xcodegen
+        run: |
+          rustup toolchain install stable --profile minimal
+          rustup toolchain install "$TOOLCHAIN" --profile minimal
+          rustup target add aarch64-apple-ios --toolchain "$TOOLCHAIN"
+          brew install xcodegen sevenzip
+          cargo --version
+
+      - name: Cache Rust build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: rust-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+
+      - name: Cache iOS shaders
+        uses: actions/cache@v4
+        with:
+          path: work/shader_cache_ios.noindex
+          key: shaders-ios-${{ hashFiles('data/pipelines.tsv', 'phone-pipelines.tsv', 'patch-heap.py') }}
+          restore-keys: shaders-ios-
+
+      # The game code extracted from the .nsp (a few tens of MB) is kept in the
+      # Actions cache: once it is there, and the shader list did not change,
+      # the 12 GB download is skipped completely.
+      - name: Cache game modules
+        uses: actions/cache@v4
+        with:
+          path: work/v-upd
+          key: modules-${{ hashFiles('crates/nxpatch/**', 'crates/nxfs/**') }}
+          restore-keys: modules-
+
+      - name: Need the game files?
+        id: need
+        run: |
+          C=work/shader_cache_ios.noindex
+          STAMP="$(cat data/pipelines.tsv phone-pipelines.tsv 2>/dev/null | awk 'NF && !seen[$0]++' | shasum | cut -d' ' -f1)"
+          if [ -f work/v-upd/exefs/main ] && [ -f "$C/index.tsv" ] && [ "$(cat "$C/pipelines.stamp" 2>/dev/null)" = "$STAMP" ]; then
+            echo "game modules and shaders are cached: no download needed"
+            echo "download=no" >> "$GITHUB_OUTPUT"
+          else
+            echo "download=yes" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download game files
+        if: steps.need.outputs.download == 'yes'
+        env:
+          KEYS_URL: ${{ secrets.KEYS_URL }}
+          BASE_URL: ${{ secrets.BASE_URL }}
+          UPDATE_URL: ${{ secrets.UPDATE_URL }}
+          GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
+        run: |
+          mkdir -p out; exec > >(python3 -u .github/mask.py | tee -a out/download.txt) 2>&1
+          python3 -m pip install --quiet --break-system-packages gdown google-auth requests || python3 -m pip install --quiet --user gdown google-auth requests
+          export PATH="$PATH:$(python3 -m site --user-base)/bin"
+          get() {
+            case "$1" in
+              *drive.google.com*)
+                if [ -n "${GDRIVE_SA_JSON:-}" ]; then
+                  id="$(python3 .github/drive_token.py --id "$1")"; tok="$(python3 .github/drive_token.py)"
+                  curl -fsSL --retry 5 --retry-all-errors -C - -H "Authorization: Bearer $tok" \
+                    "https://www.googleapis.com/drive/v3/files/$id?alt=media&supportsAllDrives=true&acknowledgeAbuse=true" -o "$2" && return 0
+                  echo "Drive API download failed, trying the public link"
+                fi
+                for i in 1 2 3 4 5; do
+                  python3 -m gdown --continue --retries 3 --quiet "$1" -O "$2" && return 0
+                  echo "Drive download cut, retry $i"; sleep 10
+                done; return 1 ;;
+              *dropbox.com*)
+                u="${1/dl=0/dl=1}"; case "$u" in *dl=1*) ;; *\?*) u="$u&dl=1" ;; *) u="$u?dl=1" ;; esac
+                curl -fsSL --retry 5 --retry-all-errors -C - "$u" -o "$2" ;;
+              *) curl -fsSL --retry 3 "$1" -o "$2" ;;
+            esac
+          }
+          get "$KEYS_URL"   prod.keys
+          get "$BASE_URL"   base.nsp
+          get "$UPDATE_URL" upd4-0-1.nsp
+          ls -lh prod.keys base.nsp upd4-0-1.nsp
+          # A Drive error page instead of the file is a few KB of HTML
+          for f in base.nsp upd4-0-1.nsp; do
+            if head -c 200 "$f" | grep -qi "<html"; then echo "::error::$f is an HTML page, not the file: check the link sharing"; exit 1; fi
+          done
+          df -h /
+
+      - name: Unlocked save (optional, secret SAVE_URL = link to a zip/rar of the save folder)
+        env:
+          SAVE_URL: ${{ secrets.SAVE_URL }}
+          GDRIVE_SA_JSON: ${{ secrets.GDRIVE_SA_JSON }}
+        run: |
+          rm -rf unlocked-save
+          [ -n "$SAVE_URL" ] || { echo "no SAVE_URL: the IPA has no unlocked save"; exit 0; }
+          mkdir -p out; exec > >(python3 -u .github/mask.py | tee -a out/download.txt) 2>&1
+          python3 -m pip install --quiet --break-system-packages gdown google-auth requests || true
+          case "$SAVE_URL" in
+            *drive.google.com*)
+              if [ -n "${GDRIVE_SA_JSON:-}" ]; then
+                id="$(python3 .github/drive_token.py --id "$SAVE_URL")"; tok="$(python3 .github/drive_token.py)"
+                curl -fsSL --retry 5 -H "Authorization: Bearer $tok" "https://www.googleapis.com/drive/v3/files/$id?alt=media&supportsAllDrives=true&acknowledgeAbuse=true" -o save.archive \
+                  || python3 -m gdown --quiet "$SAVE_URL" -O save.archive
+              else
+                python3 -m gdown --quiet "$SAVE_URL" -O save.archive
+              fi ;;
+            *dropbox.com*) u="${SAVE_URL/dl=0/dl=1}"; curl -fsSL "$u" -o save.archive ;;
+            *) curl -fsSL "$SAVE_URL" -o save.archive ;;
+          esac
+          mkdir -p save-tmp
+          # 7zz from Homebrew cannot unpack every RAR: fall back to unar
+          if ! 7zz x -y -osave-tmp save.archive > /dev/null; then
+            echo "7zz could not unpack the save, trying unar"
+            rm -rf save-tmp; mkdir -p save-tmp
+            brew install unar > /dev/null && unar -q -f -o save-tmp save.archive || { echo "::error::could not unpack the save archive"; exit 1; }
+          fi
+          rm -f save.archive
+          if [ -z "$(find save-tmp -type f -size +0)" ]; then echo "::error::the unpacked save is empty"; exit 1; fi
+          # use the folder that holds the save files (zip may wrap them in a folder)
+          d=save-tmp; while [ "$(ls -A "$d" | wc -l)" -eq 1 ] && [ -d "$d/$(ls -A "$d")" ]; do d="$d/$(ls -A "$d")"; done
+          mv "$d" unlocked-save; rm -rf save-tmp
+          find unlocked-save -type f | head -20
+
+      - name: Apply experimental patches (if any)
+        run: |
+          if [ -f patch-heap.py ]; then python3 patch-heap.py; else echo "no patch-heap.py, building stock Mush8"; fi
+
+      - name: Build IPA
+        run: |
+          mkdir -p out; exec > >(tee -a out/build.txt) 2>&1
+          export PATH="$HOME/.cargo/bin:$PATH"
+          ./make-ios.sh --ipa
+        # On failure, show the shader log
+      - name: Shader log (on failure)
+        if: failure()
+        run: tail -50 work/precompile_ios.log || true
+
+      - name: A16 archive log
+        if: always()
+        run: |
+          cat work/a16.log || true
+          mkdir -p out; cp work/a16.log out/ 2>/dev/null || true
+          # temp files of a failed A16 step must not end up in the shader cache
+          rm -rf work/shader_cache_ios.noindex/a16
+
+      - name: Encrypt IPA
+        env:
+          IPA_PASSWORD: ${{ secrets.IPA_PASSWORD }}
+        run: |
+          7zz a -tzip -mem=AES256 -p"$IPA_PASSWORD" Mush8-ipa.zip build/Mush8.ipa
+          ls -lh Mush8-ipa.zip
+
+      - name: Remove game files
+        if: always()
+        run: rm -rf prod.keys base.nsp upd4-0-1.nsp unlocked-save
+
+      - name: Publish logs
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash .github/publish-logs.sh build
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Mush8-ipa
+          path: Mush8-ipa.zip
+          retention-days: 3

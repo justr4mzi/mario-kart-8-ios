@@ -1,0 +1,168 @@
+   Compiling nxfs v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxfs)
+   Compiling nxabi v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxabi)
+   Compiling nxshader v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxshader)
+   Compiling nxhost v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxhost)
+   Compiling nxpatch v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxpatch)
+   Compiling nxscan v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxscan)
+warning: unused variable: `n`
+   --> crates/nxhost/src/nvn/draw/state.rs:808:14
+    |
+808 |         let (n, total) = (PREWARM_BUILT.load(Relaxed), PREWARM_TOTAL.load(Relaxed).max(1));
+    |              ^ help: if this is intentional, prefix it with an underscore: `_n`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `total`
+   --> crates/nxhost/src/nvn/draw/state.rs:808:17
+    |
+808 |         let (n, total) = (PREWARM_BUILT.load(Relaxed), PREWARM_TOTAL.load(Relaxed).max(1));
+    |                 ^^^^^ help: if this is intentional, prefix it with an underscore: `_total`
+
+warning: function `seed_unlocked_save` is never used
+   --> crates/nxhost/src/main.rs:373:4
+    |
+373 | fn seed_unlocked_save(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+    |    ^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `copy_dir` is never used
+   --> crates/nxhost/src/main.rs:399:4
+    |
+399 | fn copy_dir(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+    |    ^^^^^^^^
+
+warning: variable `LIMIT` should have a snake case name
+    --> crates/nxhost/src/nvn/draw/textures.rs:1040:9
+     |
+1040 |     let LIMIT: usize = if left != 0 && left < 600 << 20 { 24 << 20 } else { 96 << 20 };
+     |         ^^^^^ help: convert the identifier to snake case: `limit`
+     |
+     = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+warning: `nxhost` (bin "nxhost") generated 5 warnings (run `cargo fix --bin "nxhost" -p nxhost` to apply 2 suggestions)
+    Finished `release` profile [optimized + debuginfo] target(s) in 35.67s
+   Compiling libc v0.2.190
+   Compiling objc2 v0.6.5
+   Compiling objc2-encode v4.1.0
+   Compiling bitflags v2.13.2
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling unicode-ident v1.0.27
+   Compiling cpp_demangle v0.5.1
+   Compiling block2 v0.6.2
+   Compiling syn v3.0.9
+   Compiling anyhow v1.0.104
+   Compiling dispatch2 v0.3.1
+   Compiling typenum v1.20.1
+   Compiling objc2-core-foundation v0.3.2
+   Compiling heck v0.5.0
+   Compiling hybrid-array v0.4.15
+   Compiling utf8parse v0.2.2
+   Compiling autocfg v1.5.1
+   Compiling objc2-foundation v0.3.2
+   Compiling num-traits v0.2.19
+   Compiling clap_derive v4.6.7
+   Compiling anstyle-parse v1.0.0
+   Compiling colorchoice v1.0.5
+   Compiling anstyle-query v1.1.5
+   Compiling is_terminal_polyfill v1.70.2
+   Compiling cfg-if v1.0.5
+   Compiling anstyle v1.0.14
+   Compiling serde_core v1.0.229
+   Compiling anstream v1.0.0
+   Compiling objc2-core-graphics v0.3.2
+   Compiling inout v0.2.3
+   Compiling crypto-common v0.2.2
+   Compiling simd-adler32 v0.3.10
+   Compiling strsim v0.11.1
+   Compiling clap_lex v1.1.1
+   Compiling clap_builder v4.6.7
+   Compiling cipher v0.5.2
+   Compiling cpufeatures v0.3.1
+   Compiling adler2 v2.0.1
+   Compiling cpubits v0.1.1
+   Compiling crc32fast v1.5.2
+   Compiling serde v1.0.229
+   Compiling twox-hash v2.1.5
+   Compiling zmij v1.0.23
+   Compiling lz4_flex v0.14.0
+   Compiling aes v0.9.3
+   Compiling clap v4.6.7
+   Compiling num-integer v0.1.47
+   Compiling serde_derive v1.0.229
+   Compiling objc2-metal v0.3.2
+   Compiling objc2-core-audio v0.3.2
+   Compiling syn v2.0.119
+   Compiling objc2-core-audio-types v0.3.2
+   Compiling thiserror v1.0.69
+   Compiling hex v0.4.3
+   Compiling serde_json v1.0.154
+   Compiling nxfs v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxfs)
+   Compiling thiserror-impl v1.0.69
+   Compiling objc2-core-video v0.3.2
+   Compiling objc2-quartz-core v0.3.2
+   Compiling objc2-core-location v0.3.2
+   Compiling objc2-core-image v0.3.2
+   Compiling num-bigint v0.4.8
+   Compiling miniz_oxide v0.9.1
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling num-rational v0.4.2
+   Compiling flate2 v1.1.10
+   Compiling objc2-core-media v0.3.2
+   Compiling nxhost v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxhost)
+   Compiling objc2-core-data v0.3.2
+   Compiling objc2-avf-audio v0.3.2
+   Compiling objc2-cloud-kit v0.3.2
+   Compiling objc2-user-notifications v0.3.2
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling objc2-image-io v0.3.2
+   Compiling objc2-media-toolbox v0.3.2
+   Compiling objc2-core-text v0.3.2
+   Compiling bytes v1.12.1
+   Compiling quick-error v2.0.1
+   Compiling byteorder-lite v0.1.0
+   Compiling byteorder v1.5.0
+   Compiling image-webp v0.2.4
+   Compiling mp4 v0.14.0
+   Compiling objc2-ui-kit v0.3.2
+   Compiling png v0.18.1
+   Compiling objc2-av-foundation v0.3.2
+   Compiling nxshader v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxshader)
+   Compiling objc2-core-motion v0.3.2
+   Compiling objc2-audio-toolbox v0.3.2
+   Compiling objc2-game-controller v0.3.2
+   Compiling objc2-core-haptics v0.3.2
+   Compiling nxabi v0.1.0 (/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/crates/nxabi)
+   Compiling bcdec_rs v0.2.0
+warning: variable `LIMIT` should have a snake case name
+    --> crates/nxhost/src/nvn/draw/textures.rs:1040:9
+     |
+1040 |     let LIMIT: usize = if left != 0 && left < 600 << 20 { 24 << 20 } else { 96 << 20 };
+     |         ^^^^^ help: convert the identifier to snake case: `limit`
+     |
+     = note: `#[warn(non_snake_case)]` (part of `#[warn(nonstandard_style)]`) on by default
+
+error: linking with `cc` failed: exit status: 1
+  |
+  = note:  "cc" "<284 object files omitted>" "-framework" "Security" "-framework" "CoreFoundation" "-framework" "Network" "-lmush8launcher" "<sysroot>/lib/rustlib/aarch64-apple-ios/lib/libcompiler_builtins-*.rlib" "-framework" "CoreMotion" "-framework" "AVFoundation" "-framework" "ImageIO" "-framework" "AVFAudio" "-framework" "MediaToolbox" "-framework" "CoreMedia" "-framework" "GameController" "-framework" "CoreHaptics" "-framework" "UIKit" "-framework" "UserNotifications" "-framework" "CoreData" "-framework" "CoreLocation" "-framework" "CoreText" "-framework" "CoreImage" "-framework" "CloudKit" "-framework" "QuartzCore" "-framework" "CoreVideo" "-framework" "CoreGraphics" "-framework" "Metal" "-framework" "AudioToolbox" "-framework" "CoreAudio" "-framework" "Foundation" "-framework" "CoreFoundation" "-lSystem" "-liconv" "-lobjc" "-framework" "Foundation" "-lSystem" "-lc" "-lm" "-target" "arm64-apple-ios26.0.0" "-L" "/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/target/ios/aarch64-apple-ios/release/build/nxhost-aa9ec147b273e602/out" "-L" "/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS26.5.sdk/usr/lib/swift" "-L" "/Applications/Xcode_26.6.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/iphoneos" "-o" "/Users/runner/work/mario-kart-8-ios/mario-kart-8-ios/target/ios/aarch64-apple-ios/release/deps/nxhost-28bd46fc5865dbcf" "-Wl,-dead_strip" "-nodefaultlibs" "-Wl,-segprot,__NX0_X,rx,rx" "-Wl,-segaddr,__NX0_X,0x104000000" "-Wl,-segprot,__NX0_D,rw,rw" "-Wl,-segaddr,__NX0_D,0x104b58000" "-Wl,-segprot,__NX0_T,rx,rx" "-Wl,-segaddr,__NX0_T,0x10536c000" "-Wl,-segprot,__NX1_X,rx,rx" "-Wl,-segaddr,__NX1_X,0x105394000" "-Wl,-segprot,__NX1_D,rw,rw" "-Wl,-segaddr,__NX1_D,0x1056a0000" "-Wl,-segprot,__NX1_T,rx,rx" "-Wl,-segaddr,__NX1_T,0x105a80000" "-Wl,-segprot,__NX2_X,rx,rx" "-Wl,-segaddr,__NX2_X,0x105ad8000" "-Wl,-segprot,__NX2_D,rw,rw" "-Wl,-segaddr,__NX2_D,0x105ee8000" "-Wl,-segprot,__NX2_T,rx,rx" "-Wl,-segaddr,__NX2_T,0x106568000"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
+  = note: ld: warning: ignoring duplicate libraries: '-lSystem'
+          ld: warning: Could not find or use auto-linked framework 'CoreAudioTypes': framework 'CoreAudioTypes' not found
+          ld: warning: Could not find or use auto-linked framework 'UIUtilities': framework 'UIUtilities' not found
+          ld: warning: Could not parse or use implicit file '/Applications/Xcode_26.6.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks/SwiftUICore.framework/SwiftUICore.tbd': cannot link directly with 'SwiftUICore' because product being built is not an allowed client of it
+          Undefined symbols for architecture arm64:
+            "___isPlatformVersionAtLeast", referenced from:
+                Mush8Launcher.LauncherView.body.getter : some in libmush8launcher.a[2](Launcher-1.o)
+                l_get_underlying_type_ref 7SwiftUI4ViewPAAEAcAE3tag_15includeOptionalQrqd___SbtSHRd__lFQOQr in libmush8launcher.a[2](Launcher-1.o)
+                l_get_underlying_witness 7SwiftUI4ViewPAAEAcAE3tag_15includeOptionalQrqd___SbtSHRd__lFQOqd0__AaBHC in libmush8launcher.a[2](Launcher-1.o)
+                l_get_underlying_type_ref 7SwiftUI4ViewPAAEAcAE4task4name8priority4file4line_QrSSSg_ScPSSSiyyYaYAcntFQOQr in libmush8launcher.a[2](Launcher-1.o)
+                l_get_underlying_witness 7SwiftUI4ViewPAAEAcAE4task4name8priority4file4line_QrSSSg_ScPSSSiyyYaYAcntFQOqd__AaBHC in libmush8launcher.a[2](Launcher-1.o)
+          ld: symbol(s) not found for architecture arm64
+          clang: error: linker command failed with exit code 1 (use -v to see invocation)
+          
+
+warning: `nxhost` (bin "nxhost") generated 1 warning
+error: could not compile `nxhost` (bin "nxhost") due to 1 previous error; 1 warning emitted
